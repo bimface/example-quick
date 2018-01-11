@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>BIMFACE-工程文件的在线浏览及数据服务</title>
+    <meta name="keywords" content="BIMFACE,BIM,模型,轻量化,模型轻量化,建筑,工程文件,Revit,CAD,SketchUp,Navisworks,3ds Max"/>
+    <meta name="description"
+          content="BIMFACE面向工程建筑领域，提供了Revit模型、CAD图纸等多种工程文件的轻量化浏览及数据服务。 建筑领域的开发者，可以基于BIMFACE的基础服务，根据最终用户的需求，开发出贴合特定场景的应用。"/>
+    <link rel="shortcut icon" href="https://static.bimface.com/favicon.ico" type="image/x-icon"/>
+    <link rel="icon" href="https://static.bimface.com/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="css/example-common.css">
+    <style>
+        .container {
+            padding: 20px;
+        }
+
+        .warning {
+            color: #ff2626;
+        }
+
+        .failed, .failure {
+            color: red
+        }
+
+        .null {
+            color: #ccc;
+        }
+
+        .success {
+            color: #11dab7
+        }
+
+        .tab {
+            overflow: hidden;
+        }
+
+        .tab li {
+            float: left;
+            line-height: 50px;
+            padding: 0 40px;
+            background-color: #d7d7d7;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .tab li:hover {
+            color: #333;
+        }
+
+        .tab li.on {
+            background-color: #fff;
+            color: #333;
+        }
+
+        .tab-box {
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        .table-list {
+            margin-top: 20px;
+            width: 100%;
+            border-top: 1px solid #ccc
+        }
+
+        .table-list th {
+            color: #999;
+            text-align: left;
+            font-weight: 400;
+            background-color: #eee
+        }
+
+        .table-list td, .table-list th {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            vertical-align: top;
+            line-height: 2;
+            word-break: break-all
+        }
+
+        .table-list td a, .table-list th a {
+            margin-right: 10px
+        }
+
+        .table-list td span.disable {
+            margin-right: 10px;
+            color:#ccc;
+        }
+
+        .popup-mask {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .2);
+            top: 0;
+            left: 0;
+            z-index: 199
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200
+        }
+
+        .popup .close {
+            float: right;
+            font-size: 20px;
+            color: #fff;
+            position: absolute;
+            right: 10px;
+            top: 4px;
+            cursor: pointer
+        }
+
+        .popup .close:hover {
+            text-decoration: none;
+            color: #0cf
+        }
+
+        .popup .tit {
+            background-color: #2c2c2c;
+            color: #fff;
+            line-height: 40px;
+            padding: 0 10px
+        }
+
+        .popup .content {
+            border: 1px solid #fff;
+            padding: 10px;
+            background-color: #fff
+        }
+
+        .popup .content .note {
+            padding: 15px 0;
+            text-align: center;
+            color: red;
+            background-color: #ffdedc
+        }
+
+        .popup .content table {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 12px
+        }
+
+        .popup .content table td, .popup .content table th {
+            padding: 5px;
+            text-align: left
+        }
+
+        .popup .content table th {
+            background-color: #f2f2f2;
+            font-size: 14px
+        }
+
+        .popup .content table td {
+            border-bottom: 1px solid #ddd
+        }
+
+        .popup.popup-upload {
+            width: 600px
+        }
+
+        .popup.popup-upload .content {
+            height: 320px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .popup.popup-upload .content .step p {
+            margin-top: 20px;
+            color: #999;
+            line-height: 1.8
+        }
+
+        .popup.popup-upload .content .step i {
+            font-style: normal
+        }
+
+        .popup.popup-upload .content .step .tips {
+            margin-bottom: 20px;
+            line-height: 1.8
+        }
+
+        .popup.popup-upload .content .step input {
+            height: 40px;
+            line-height: 40px;
+            width: 300px;
+            padding: 0 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            vertical-align: top
+        }
+
+        .control .command {
+            margin-left: 40px;
+            display: inline-block;
+            vertical-align: middle;
+            overflow: hidden;
+        }
+
+        .control .command a {
+            float: left;
+            width: auto;
+            padding: 0 20px;
+            border: 1px solid #ccc;
+            border-right: 0 none;
+            border-radius: 0;
+            background-color: #f2f2f2;
+            color: #666;
+        }
+
+        .control .command a:first-child {
+            border-radius: 4px 0 0 4px;
+        }
+
+        .control .command a:last-child {
+            border-radius: 0 4px 4px 0;
+            border-right: 1px solid #ccc;
+        }
+
+        .control .command a:hover {
+            background-color: #fff;
+            color: #333;
+        }
+
+        .control .command a.btn-disable {
+            cursor: default;
+            background-color: #eee;
+            color:#999;
+        }
+        .control .command a.btn-disable:hover {
+            border-right: 0 none;
+            cursor: default;
+            background-color: #eee;
+            color:#999;
+        }
+        .control .command a.btn-disable:last-child {
+            border-radius: 0 4px 4px 0;
+            border-right: 1px solid #ccc;
+        }
+
+        .popup-integrate .content {
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .popup-integrate .content .type {
+            text-align: center;
+            line-height: 40px;
+            background-color: #e7e7e7;
+        }
+
+        .popup-integrate dd {
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .popup-integrate .side {
+            width: 300px;
+            float: left;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        .popup-integrate .main {
+            width: 438px;
+            float: left;
+            margin-left: 20px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        .popup-integrate .set {
+            clear: left;
+            padding-top: 20px;
+        }
+
+        .popup-integrate .set input {
+            border: 1px solid #ccc;
+            height: 38px;
+            vertical-align: top;
+            padding: 0 10px;
+            margin-right: 5px;
+            width: 607px;;
+        }
+
+        .popup-integrate dt {
+            overflow: hidden;
+        }
+
+        .popup-integrate dt span {
+            float: left;
+            box-sizing: border-box;
+            height: 40px;;
+            padding: 10px 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .popup-integrate dt .right {
+            text-align: right;
+        }
+
+        .popup-integrate dt span.w200 {
+            width: 200px;
+        }
+
+        .popup-integrate dt span.w240 {
+            width: 240px;
+        }
+
+        .popup-integrate dt span.w100 {
+            width: 98px;
+        }
+
+        .popup.popup-integrate .content table {
+            margin-top: 0;
+        }
+
+        .popup.popup-integrate .content table td.right {
+            text-align: right;
+        }
+
+        .popup.popup-integrate table td input.w88 {
+            width: 88px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        .popup-list .content {
+            padding: 0px;
+        }
+
+        .popup-list .content .list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .popup-list .content .list span {
+            display: inline-block;
+            width: 90px;
+            text-align: right;
+        }
+        .popup-list .content .list span.name {
+            width:298px;
+            text-align: left;
+        }
+
+        .popup-list .content .list li {
+            line-height: 30px;
+            border-bottom: 1px solid #ddd;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .popup-list .content .list li:last-child {
+            border-bottom: 0 none;
+        }
+        .table-upload {
+            border: 1px solid #ccc
+        }
+        .table-upload .table-list {
+            border-top: 0 none;
+            margin-top: 0
+        }
+        .table-upload .overflow {
+            height: 244px;
+            overflow: auto
+        }
+        .table-upload .overflow li {
+            height: 48px;
+            line-height: 48px;
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            position: relative
+        }
+        .table-upload .overflow li i {
+            display: block;
+            height: 48px;
+            background-color: #efffe6
+        }
+        .table-upload .overflow li .text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: left;
+        }
+        .table-upload .overflow li .text div {
+            float: left;
+            padding: 0 10px;
+            box-sizing: border-box
+        }
+        .table-upload .name {
+            width: 60%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            text-align: left;
+        }
+
+        .table-upload .size,.table-upload .state {
+            width: 20%
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo"></a>
+    <h2>基于BIMFACE快速入门<i>官方示例</i></h2>
+    <div class="btn-box">
+        <a href="https://github.com/bimface/example-quick" target="_blank" class="btn btn-sm btn-primary">源代码</a>
+        <a href="http://bimface.com/example" class="btn btn-sm btn-primary">详情介绍</a>
+    </div>
+</header>
+
+<div class="container">
+    <ul class="tab">
+        <li class="on">文件管理</li>
+        <li>集成模型</li>
+    </ul>
+    <div class="model-box">
+        <div class="tab-box">
+            <div class="control">
+                <button class="btn btn-md btn-primary btn-upload" id="btnUpload">上传文件</button>
+                <div class="command">
+                    <a href="javascript:void(0)" class="btn btn-md btn-disable" id="translateAll">转换</a>
+                    <a href="javascript:void(0)" class="btn btn-md btn-disable" id="createAll">生成离线包</a>
+                    <a href="javascript:void(0)" class="btn btn-md btn-disable" id="deleteAll">删除</a>
+                </div>
+            </div>
+            <table cellspacing="0" cellpadding="0" class="table-list" id="fileList">
+                <tr>
+                    <th width="20"><input type="checkbox" class="btn_selectAll"></th>
+                    <th>文件名</th>
+                    <th width="130">上传时间</th>
+                    <th width="70">大小</th>
+                    <th width="70">转换状态</th>
+                    <th width="70">离线包状态</th>
+                    <th width="360">操作</th>
+                </tr>
+            </table>
+        </div>
+
+        <div class="tab-box" style="display: none">
+            <div class="control">
+                <button class="btn btn-md btn-primary btn-upload" id="btnIntegrate">发起集成</button>
+                <div class="command">
+                    <a href="javascript:void(0)" class="btn btn-md btn-disable" id="createIntegrateAll">生成离线包</a>
+                    <a href="javascript:void(0)" class="btn btn-md btn-disable" id="deleteIntegrateAll">删除</a>
+                </div>
+            </div>
+            <table cellspacing="0" cellpadding="0" class="table-list" id="integrateList">
+                <tr>
+                    <th width="20"><input type="checkbox" class="btn_selectAll2"></th>
+                    <th>模型名称</th>
+                    <th width="130">集成时间</th>
+                    <th width="60">文件个数</th>
+                    <th width="70">集成状态</th>
+                    <th width="70">离线包状态</th>
+                    <th width="250">操作</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="w1200">
+        <div class="copyright">
+            Copyright &copy;2016-2018 <a href="http://bimface.com" target="_blank">BIMFACE</a> 京ICP备10021606号-19 <a
+                href="http://www.glodon.com/" target="_blank">广联达</a>旗下产品
+        </div>
+    </div>
+</footer>
+
+
+<div class="popup-mask"></div>
+<div class="popup popup-upload">
+    <div class="close">×</div>
+    <div class="tit">上传模型/图纸</div>
+    <div class="content">
+        <div class="step" style="position: relative; padding: 80px 0;">
+            <a href="javascript:void(0)" class="btn btn-primary btn-md" id="btnAdd">选择文件</a>
+            <p>文件大小：500M<br>文件格式：rfa,rvt,dwg,dwf,nwd,ifc,dxf,skp,dgn,obj,stl,3ds,dae,ply,igms</p>
+        </div>
+        <div class="step" style="display: none">
+            <div class="table-upload">
+                <table cellpadding="0" cellspacing="0" class="table-list">
+                    <tr>
+                        <th class="name">名称</th>
+                        <th class="size">大小</th>
+                        <th class="state">上传状态</th>
+                    </tr>
+                </table>
+                <ul class="overflow" id="loadingState"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="popup popup-integrate" style="width: 800px;">
+    <div class="close">×</div>
+    <div class="tit">集成</div>
+    <div class="content">
+        <div class="side">
+            <div class="type">待集成的rvt文件</div>
+            <dl>
+                <dt>
+                    <span class="w200">文件名</span>
+                    <span class="w100 right">操作</span>
+                </dt>
+                <dd>
+                    <table cellpadding="0" cellspacing="0" id="jcFileList"></table>
+                </dd>
+            </dl>
+        </div>
+
+        <div class="main">
+            <div class="type">已添加的rvt文件</div>
+            <dl>
+                <dt>
+                    <span class="w240">文件名</span>
+                    <span class="w100">专业</span>
+                    <span class="w100">楼层</span>
+                </dt>
+                <dd>
+                    <table cellpadding="0" cellspacing="0" id="jcFileList2"></table>
+                </dd>
+            </dl>
+        </div>
+
+        <div class="set">
+            <input type="text" placeholder="请输入项目名称" id="integrateName"/>
+            <a href="javascript:void(0)" class="btn btn-md btn-primary" id="startIntegrate">开始集成</a>
+        </div>
+    </div>
+</div>
+
+<div class="popup popup-list" style="width: 500px;">
+    <div class="close">×</div>
+    <div class="tit">集成的文件列表</div>
+    <div class="content">
+        <ul class="list" id="integrateFileList"></ul>
+    </div>
+</div>
+
+<script src="https://static.bimface.com/developer/libs/jquery.js"></script>
+<script src="js/plupload.full.min.js"></script>
+<script src="js/formateDateTime.js"></script>
+<script src="https://static.bimface.com/api/BimfaceSDKLoader/BimfaceSDKLoader@latest-release.js"
+        charset="utf-8"></script>
+<script>
+    $(function () {
+        var _height = window.innerHeight - 105;
+        $('.container').css('min-height', (_height - 40) + 'px');
+
+        Guide.init();
+
+        $('#btnUpload').click(function () {
+            Guide.showPopup('.popup-upload');
+        })
+
+        $('#btnIntegrate').click(function () {
+            Guide.getFileToIntegrate();
+            Guide.showPopup('.popup-integrate');
+        })
+
+        $('body').on('click', '.btnList', function () {
+            var _id = $(this).attr('data-id');
+            Guide.getIntegrateFileList(_id);
+            Guide.showPopup('.popup-list');
+        })
+
+        $('body').on('click', '.btnTo', function () {
+            var _id = $(this).attr('data-id'),
+                _name = $(this).parents('tr').find('td').eq(0).html();
+            $(this).parent('td').html('<span>添加</span>');
+            var $jcFileList2 = $('#jcFileList2');
+            var _dom = '<tr data-id="' + _id + '">' +
+                '<td>' + _name + '</td>' +
+                '<td width="88"><input type="text" class="w88"></td>' +
+                '<td width="88"><input type="text" class="w88"></td>' +
+                '</tr>';
+            $jcFileList2.append(_dom);
+        })
+
+        $('body').on('click', '#startIntegrate', function () {
+            var _val = $('#integrateName').val().trim(),
+                _len = $('#jcFileList2').find('tr').length;
+            if(_val.length > 0 && _len > 1){
+                var _sources = [];
+                for(var i=0;i<_len;i++){
+                    var _item = $('#jcFileList2').find('tr').eq(i);
+                    _itemVal = {
+                        fileId:_item.attr('data-id'),
+                        specialty:_item.find('td').eq(1).find('input').val(),
+                        floor:_item.find('td').eq(2).find('input').val()
+                    };
+                    _sources.push(_itemVal);
+                }
+                var data = {
+                    name:_val,
+                    sources:_sources
+                }
+
+                $.ajax({
+                    url: 'integrate',
+                    type: "post",
+                    contentType:"application/json",
+                    data:JSON.stringify(data),
+                    success: function (result) {
+                        $('.popup-mask').hide();
+                        $('.popup').hide();
+                        Guide.getIntegrateList();
+                    }
+                })
+            }
+
+        })
+
+    })
+
+    var Guide = {
+        init: function () {
+            Guide.tab();
+            Guide.closePopup();
+            Guide.getFileList();
+            Guide.getIntegrateList();
+            Guide.controlList();
+            Guide.upload();
+            Guide.selectFn();
+            window.len = 0;
+        },
+
+        upload: function () {
+            var uploader = new plupload.Uploader({
+                runtimes: 'html5,html4',
+                browse_button: 'btnAdd',
+                url: 'https://oss.aliyuncs.com',
+                filters: {
+                    mime_types: [
+                        {
+                            title: 'rfa,rvt,dwg,dwf,nwd,ifc,dxf,skp,dgn,obj,stl,3ds,dae,ply,igms',
+                            extensions: 'rfa,rvt,dwg,dwf,nwd,ifc,dxf,skp,dgn,obj,stl,3ds,dae,ply,igms'
+                        }
+                    ],
+                    max_file_size: '500Mb',
+                    prevent_duplicates: true
+                }
+            });
+            uploader.init();
+
+            uploader.bind('FilesAdded', function (uploader, files) {
+                $('#loadingState').empty();
+                for(var i=0;i<uploader.files.length;i++){
+                    var _dom = '<li><i class="uploading" style="width:0%;"></i>' +
+                        '<div class="text"><div class="name text-align-left">' + uploader.files[i].name + '</div>' +
+                        '<div class="size">' + (uploader.files[i].size/1024/1024).toFixed(2) + 'Mb</div>' +
+                        '<div class="state"><span class="percent"></span></div></div></li>';
+                    $('#loadingState').append(_dom);
+                }
+                uploader.start();
+            });
+            uploader.bind('BeforeUpload', function (uploader, file) {
+                var _name = encodeURI(file.name);
+                _name = _name.replace(/\#/g, "%23");
+                $.ajax({
+                    url: 'file/policy?fileName=' + _name,
+                    type: "get",
+                    async: false,
+                    size: file.size,
+                    success: function (result) {
+                        var new_multipart_params = {
+                            'key': result.objectKey,
+                            'policy': result.policy,
+                            'OSSAccessKeyId': result.accessId,
+                            'success_action_status': '200',
+                            'callback': result.callbackBody,
+                            'signature': result.signature
+                        };
+                        uploader.setOption({
+                            'url': result.host,
+                            'multipart_params': new_multipart_params
+                        });
+                    }
+                })
+            });
+            uploader.bind('UploadProgress', function (uploader, file) {
+                $('.popup-upload .step').eq(1).show().siblings().hide();
+                for(var i=0;i<uploader.files.length;i++){
+                    $('#loadingState li').eq(i).find('i').attr('style','width:' + uploader.files[i].percent + '%');
+                    $('#loadingState li').eq(i).find('.percent').html(uploader.files[i].percent + '%');
+                }
+            });
+            uploader.bind('FileUploaded', function (uploader, file, responseObject) {
+                window.len++;
+                $.post('file', JSON.parse(responseObject.response).data, function (res) {
+                    if(window.len == uploader.files.length){
+                        $('.popup-upload .step').eq(0).show().siblings().hide();
+                        $('.popup-mask').hide();
+                        $('.popup').hide();
+                        Guide.getFileList();
+                    }
+                })
+            });
+        },
+
+        controlList: function () {
+            $('body').on('click', '.btnDownload', function () {
+                $.get('file/download_url?fileId=' + $(this).attr('data-id'), function (res) {
+                    window.location.href = res;
+                })
+            })
+            $('body').on('click', '.btnDatabag', function () {
+                var _id = $(this).attr('data-id');
+                Guide.createFileDatabag(_id);
+            })
+            $('body').on('click', '.btnIntegrateDatabag', function () {
+                var _id = $(this).attr('data-id');
+                Guide.createIntegrateDatabag(_id);
+            })
+            $('body').on('click', '.btnDownloadDatabag', function () {
+                var _id = $(this).attr('data-id');
+                Guide.downloadDatabag(_id);
+            })
+            $('body').on('click', '.btnDownloadIntegrateDatabag', function () {
+                var _id = $(this).attr('data-id');
+                Guide.downloadIntegrateDatabag(_id);
+            })
+            $('body').on('click', '.btnDeleteFile', function () {
+                var _id = $(this).attr('data-id');
+                Guide.deleteFile(_id);
+            })
+            $('body').on('click', '.btnDeleteIntegrate', function () {
+                var _id = $(this).attr('data-id');
+                Guide.deleteIntegrate(_id);
+            })
+            $('body').on('click', '.btnTranslate', function () {
+                var _id = $(this).attr('data-id');
+                Guide.translateFile(_id);
+            })
+
+            $('#translateAll').click(function(){
+                if(!$(this).hasClass('btn-disable')){
+                    var arr = [];
+                    $(".btn_selectAlone:checked").each(function(){
+                        var _id = $(this).parents('tr').attr('data-id');
+                        arr.push(_id);
+                    })
+                    Guide.translateFileList(arr);
+                }
+            })
+            $('#createAll').click(function(){
+                if(!$(this).hasClass('btn-disable')){
+                    var arr = [];
+                    $(".btn_selectAlone:checked").each(function(){
+                        var _id = $(this).parents('tr').attr('data-id');
+                        arr.push(_id);
+                    })
+                    Guide.createFileDatabagList(arr);
+                }
+            })
+            $('#deleteAll').click(function(){
+                if(!$(this).hasClass('btn-disable')){
+                    var arr = [];
+                    $(".btn_selectAlone:checked").each(function(){
+                        var _id = $(this).parents('tr').attr('data-id');
+                        arr.push(_id);
+                    })
+                    Guide.deleteFileList(arr)
+                }
+            })
+            $('#createIntegrateAll').click(function(){
+                if(!$(this).hasClass('btn-disable')){
+                    var arr = [];
+                    $(".btn_selectAlone2:checked").each(function(){
+                        var _id = $(this).parents('tr').attr('data-id');
+                        arr.push(_id);
+                    })
+                    Guide.createIntegrateDatabagList(arr);
+                }
+            })
+            $('#deleteIntegrateAll').click(function(){
+                if(!$(this).hasClass('btn-disable')){
+                    var arr = [];
+                    $(".btn_selectAlone2:checked").each(function(){
+                        var _id = $(this).parents('tr').attr('data-id');
+                        arr.push(_id);
+                    })
+                    Guide.deleteIntegrateList(arr);
+                }
+            })
+        },
+
+        getFileToIntegrate: function(){
+            var $jcFileList = $('#jcFileList');
+            var $jcFileList2 = $('#jcFileList2');
+            $jcFileList.empty();
+            $jcFileList2.empty();
+            $.get('file/list?suffix=rvt&translateStatus=success',function(res){
+                for (var i = 0; i < res.length; i++) {
+                    var _item = res[i];
+                    var _dom = '<tr><td width="190">' + _item.name + '</td>' +
+                        '<td class="right"><a href="javascript:void(0)" class="btnTo" data-id="'+ _item.id +'">添加</a></td></tr>';
+                    $jcFileList.append(_dom);
+                }
+            })
+        },
+
+        getFileList: function () {
+            var $List = $('#fileList');
+            $List.find('tr').eq(0).nextAll().remove();
+            $.get('file/list', function (res) {
+                for (var i = 0; i < res.length; i++) {
+                    var _item = res[i];
+                    var _statusT = '<a href="javascript:void(0)" class="btnTranslate" data-id="' + _item.id + '">转换</a>';
+                    var _statusI = '<span class="disable">生成离线包</span>';
+                    var _statusD = '<span class="disable">下载离线包</span>';
+                    var dStatus = '<span class="disable">未生成</span>'
+                    var preView = '<span class="disable">预览</span>'
+                    if (_item.translateStatus == 'success') {
+                        var tStatus = '<span class="success">转换成功</span>';
+                        preView = '<a href="/eg-quick/preview.html?fileId=' + _item.id + '" target="_blank">预览</a>';
+                        _statusT = '<span class="disable">转换</span>';
+                        _statusI = '<a href="javascript:void(0)" class="btnDatabag" data-id="' + _item.id + '">生成离线包</a>';
+                        _statusD = '<span class="disable">下载离线包</span>';
+                        if(_item.name.substr(_item.name.length-4,_item.name.length) == '.dwg'){
+                            _statusI = '<span class="disable">不支持离线</span>';
+                            _statusD = '<span class="disable">不支持离线</span>';
+                            dStatus = '<span class="null">不支持</span>';
+                        } else {
+                            if (_item.databagStatus == 'success') {
+                                var dStatus = '<span class="success">已生成</span>';
+                                _statusI = '<span class="disable">生成离线包</span>';
+                                _statusD = '<a href="javascript:void(0)" class="btnDownloadDatabag" data-id="' + _item.id + '">下载离线包</a>';
+                            } else if (_item.databagStatus == 'failed') {
+                                dStatus = '<span class="failed">生成失败</span>'
+                            } else if (_item.databagStatus == 'prepare') {
+                                dStatus = '<span class="null">待生成</span>'
+                            } else if (_item.databagStatus == 'processing') {
+                                dStatus = '<span>生成中</span>'
+                                _statusI = '<span class="disable">生成离线包</span>'
+                            } else {
+                                dStatus = '<span class="null">未生成</span>'
+                            }
+                        }
+                    } else if (_item.translateStatus == 'failed') {
+                        var tStatus = '<span class="failed">转换失败</span>'
+                    } else if (_item.translateStatus == 'prepare') {
+                        var tStatus = '<span class="null">待转换</span>'
+                    } else if (_item.translateStatus == 'processing') {
+                        var tStatus = '<span>转换中</span>';
+                        _statusT = '<span class="disable">转换</span>';
+                    } else {
+                        var tStatus = '<span class="null">未转换</span>'
+                    }
+
+                    var _dom = '<tr data-id="' + _item.id + '"><td><input type="checkbox" class="btn_selectAlone"></td>' +
+                        '<td>' + _item.name + '</td>' +
+                        '<td>' + getFormatDateByLong(new Date(_item.createTime), "yyyy-MM-dd hh:mm") + '</td>' +
+                        '<td>' + (_item.length / 1024 / 1024).toFixed(2) + 'Mb</td>' +
+                        '<td>' + tStatus + '</td>' +
+                        '<td>' + dStatus + '</td>' +
+                        '<td>' + _statusT +
+                        preView +
+                        '<a href="javascript:void(0)" class="btnDownload" data-id="' + _item.id + '">下载</a>' +
+                        _statusI +
+                        _statusD +
+                        '<a href="javascript:void(0)" class="btnDeleteFile" data-id="' + _item.id + '">删除</a>' +
+                        '</td></tr>'
+                    $List.append(_dom);
+                }
+            })
+        },
+
+        getIntegrateList: function () {
+            var $List = $('#integrateList');
+            $List.find('tr').eq(0).nextAll().remove();
+            $.get('integrate/list', function (res) {
+                for (var i = 0; i < res.length; i++) {
+                    var _item = res[i];
+                    var _statusI = '<span class="disable">生成离线包</span>';
+                    var _statusD = '<span class="disable">下载离线包</span>';
+                    var dStatus = '<span class="disable">未生成</span>'
+                    var preView = '<span class="disable">预览</span>'
+                    if (_item.integrateStatus == 'success') {
+                        preView = '<a href="/eg-quick/preview.html?integrateId=' + _item.id + '" target="_blank">预览</a>';
+                        var tStatus = '<span class="success">集成成功</span>'
+                        _statusI = '<a href="javascript:void(0)" class="btnIntegrateDatabag" data-id="' + _item.id + '">生成离线包</a>';
+                        _statusD = '<span class="disable">下载离线包</span>';
+                        if (_item.databagStatus == 'success') {
+                            dStatus = '<span class="success">已生成</span>'
+                            _statusI = '<span class="disable">生成离线包</span>';
+                            _statusD = '<a href="javascript:void(0)" class="btnDownloadIntegrateDatabag" data-id="' + _item.id + '">下载离线包</a>';
+                        } else if (_item.databagStatus == 'failed') {
+                            dStatus = '<span class="failed">生成失败</span>'
+                        } else if (_item.databagStatus == 'prepare') {
+                            dStatus = '<span class="null">待生成</span>'
+                        } else if (_item.databagStatus == 'processing') {
+                            dStatus = '<span>生成中</span>'
+                            _statusI = '<span class="disable">生成离线包</span>'
+                        } else {
+                            dStatus = '<span class="null">未生成</span>'
+                        }
+                    } else if (_item.integrateStatus == 'failed') {
+                        var tStatus = '<span class="failed">集成失败</span>'
+                    } else if (_item.integrateStatus == 'prepare') {
+                        var tStatus = '<span class="null">待集成</span>'
+                    } else if (_item.integrateStatus == 'processing') {
+                        var tStatus = '<span>集成中</span>'
+                    } else {
+                        var tStatus = '<span class="null">未集成</span>'
+                    }
+
+                    var _dom = '<tr data-id="' + _item.id + '"><td><input type="checkbox" class="btn_selectAlone2"></td>' +
+                        '<td>' + _item.name + '</td>' +
+                        '<td>' + getFormatDateByLong(new Date(_item.createTime), "yyyy-MM-dd hh:mm") + '</td>' +
+                        '<td><a href="javascript:void(0)" class="btnList" data-id="' + _item.id + '">' + _item.fileNum + '</a></td>' +
+                        '<td>' + tStatus + '</td>' +
+                        '<td>' + dStatus + '</td>' +
+                        '<td>' +
+                        preView +
+                        _statusI +
+                        _statusD +
+                        '<a href="javascript:void(0)" class="btnDeleteIntegrate" data-id="' + _item.id + '">删除</a>' +
+                        '</td></tr>';
+                    $List.append(_dom);
+                }
+            })
+        },
+
+        getIntegrateFileList: function (id) {
+            $('#integrateFileList').empty();
+            $.get('integrate/files?integrateId=' + id, function (res) {
+                $('#integrateFileList').append('<li><span class="name">文件名</span><span>专业</span><span>楼层</span></li>');
+                for (var i = 0; i < res.length; i++) {
+                    var specialty = res[i].specialty === null ? '': res[i].specialty;
+                    var floor = res[i].floor === null ? '': res[i].floor;
+                    var _dom = '<li><span class="name">' + res[i].fileName + '</span><span>' + specialty + '</span><span>' + floor + '</span></li>'
+                    $('#integrateFileList').append(_dom);
+                }
+            })
+        },
+
+        createFileDatabag: function (id) {
+            $.ajax({
+                url: 'file/databag?fileId=' + id,
+                type: 'PUT',
+                success: function (result) {
+                    Guide.getFileList();
+                }
+            });
+        },
+        createFileDatabagList: function (ids) {
+            $.ajax({
+                url: 'file/databag/list?fileIds=' + ids,
+                type: 'PUT',
+                success: function (result) {
+                    Guide.getFileList();
+                }
+            });
+        },
+        createIntegrateDatabag: function (id) {
+            $.ajax({
+                url: 'integrate/databag?integrateId=' + id,
+                type: 'PUT',
+                success: function (result) {
+                    Guide.getIntegrateList();
+                }
+            });
+        },
+        createIntegrateDatabagList: function (ids) {
+            $.ajax({
+                url: 'integrate/databag/list?integrateIds=' + ids,
+                type: 'PUT',
+                success: function (result) {
+                    Guide.getIntegrateList();
+                }
+            });
+        },
+        downloadDatabag: function (id) {
+            $.get('file/databag_url?fileId=' + id, function (res) {
+                window.location.href = res;
+            })
+        },
+        downloadIntegrateDatabag: function (id) {
+            $.get('integrate/databag_url?integrateId=' + id, function (res) {
+                window.location.href = res;
+            })
+        },
+        deleteFile: function (id) {
+            $.ajax({
+                url: 'file?fileId=' + id,
+                type: 'DELETE',
+                success: function (result) {
+                    Guide.getFileList();
+                }
+            });
+        },
+        deleteFileList: function (ids) {
+            $.ajax({
+                url: 'file/list?fileIds=' + ids,
+                type: 'DELETE',
+                success: function (result) {
+                    Guide.getFileList();
+                }
+            });
+        },
+        deleteIntegrate: function (id) {
+            $.ajax({
+                url: 'integrate?integrateId=' + id,
+                type: 'DELETE',
+                success: function (result) {
+                    Guide.getIntegrateList();
+                }
+            });
+        },
+        deleteIntegrateList: function (ids) {
+            $.ajax({
+                url: 'integrate/list?integrateIds=' + ids,
+                type: 'DELETE',
+                success: function (result) {
+                    Guide.getIntegrateList();
+                }
+            });
+        },
+
+        translateFile: function(id){
+            $.ajax({
+                url: 'file/translate?fileId=' + id,
+                type: 'PUT',
+                success: function (result) {
+                    Guide.getFileList();
+                }
+            });
+        },
+
+        translateFileList: function(ids){
+            $.ajax({
+                url: 'file/translate/list?fileIds=' + ids,
+                type: 'PUT',
+                success: function (result) {
+                    Guide.getFileList();
+                }
+            });
+        },
+
+        selectFn: function(){
+            $('.btn_selectAll').click(function(event){
+                var _checked = $(event.target).is(':checked');
+                if(_checked){
+                    $('.btn_selectAlone').prop({"checked":true})
+                } else {
+                    $('.btn_selectAlone').prop({"checked":false})
+                }
+                Guide.updateControl(0);
+            })
+            $('body').on('click','.btn_selectAlone',function(){
+                var _len = $(".btn_selectAlone:checked").length;
+                if($('.btn_selectAlone').length == _len){
+                    $('.btn_selectAll').prop({"checked":true})
+                } else {
+                    $('.btn_selectAll').prop({"checked":false})
+                }
+                Guide.updateControl(0);
+            })
+
+            $('.btn_selectAll2').click(function(event){
+                var _checked = $(event.target).is(':checked');
+                if(_checked){
+                    $('.btn_selectAlone2').prop({"checked":true})
+                } else {
+                    $('.btn_selectAlone2').prop({"checked":false})
+                }
+                Guide.updateControl(1);
+            })
+            $('body').on('click','.btn_selectAlone2',function(){
+                var _len = $(".btn_selectAlone2:checked").length;
+                if($('.btn_selectAlone2').length == _len){
+                    $('.btn_selectAll2').prop({"checked":true})
+                } else {
+                    $('.btn_selectAll2').prop({"checked":false})
+                }
+                Guide.updateControl(1);
+            })
+        },
+
+        updateControl:function(type){
+            if(type==0){
+                var _len = $(".btn_selectAlone:checked").length;
+                if(_len > 0){
+                    var _btnT = true;
+                    var _btnL = true;
+                    $(".btn_selectAlone:checked").each(function(){
+                        var _html = $(this).parents('tr').find('td').eq(6).html();
+                        if(_html.indexOf('<span class="disable">转换</span>')>-1){
+                            _btnT = false
+                        }
+                        if(_html.indexOf('<span class="disable">生成离线包</span>')>-1 || _html.indexOf('<span class="disable">不支持离线</span>')>-1){
+                            _btnL = false
+                        }
+                    })
+                    $('#deleteAll').removeClass('btn-disable');
+                    if(_btnT){
+                        $('#translateAll').removeClass('btn-disable');
+                    } else {
+                        $('#translateAll').addClass('btn-disable');
+                    }
+                    if(_btnL){
+                        $('#createAll').removeClass('btn-disable');
+                    } else {
+                        $('#createAll').addClass('btn-disable');
+                    }
+                } else {
+                    $('#translateAll').addClass('btn-disable');
+                    $('#createAll').addClass('btn-disable');
+                    $('#deleteAll').addClass('btn-disable');
+                }
+            } else {
+                var _len = $(".btn_selectAlone2:checked").length;
+                if(_len > 0){
+                    var _btnL = true;
+                    $(".btn_selectAlone2:checked").each(function(){
+                        var _html = $(this).parents('tr').find('td').eq(6).html();
+                        if(_html.indexOf('<span class="disable">生成离线包</span>')>-1){
+                            _btnL = false
+                        }
+                    })
+                    $('#deleteIntegrateAll').removeClass('btn-disable');
+                    if(_btnL){
+                        $('#createIntegrateAll').removeClass('btn-disable');
+                    } else {
+                        $('#createIntegrateAll').addClass('btn-disable');
+                    }
+                } else {
+                    $('#createIntegrateAll').addClass('btn-disable');
+                    $('#deleteIntegrateAll').addClass('btn-disable');
+                }
+            }
+        },
+
+        tab: function () {
+            $('.tab li').click(function () {
+                var _index = $(this).index();
+                $(this).addClass('on').siblings().removeClass('on');
+                $('.tab-box').eq(_index).show().siblings().hide();
+            })
+        },
+
+        closePopup: function () {
+            $('.popup .close').click(function () {
+                $('.popup-mask').hide();
+                $('.popup').hide();
+            })
+        },
+
+        showPopup: function (dom) {
+            $('.popup-mask').show();
+            $(dom).show();
+        }
+    }
+</script>
+</body>
+</html>

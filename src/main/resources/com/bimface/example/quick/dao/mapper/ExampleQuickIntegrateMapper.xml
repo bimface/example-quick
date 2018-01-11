@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bimface.example.quick.dao.mapper.ExampleQuickIntegrateMapper" >
+  <resultMap id="BaseResultMap" type="com.bimface.example.quick.dao.model.ExampleQuickIntegrate" >
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="file_num" property="fileNum" jdbcType="INTEGER" />
+    <result column="integrate_status" property="integrateStatus" jdbcType="VARCHAR" />
+    <result column="databag_status" property="databagStatus" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+  </resultMap>
+</mapper>

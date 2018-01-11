@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>BIMFACE-工程文件的在线浏览及数据服务</title>
+  <meta name="keywords" content="BIMFACE,BIM,模型,轻量化,模型轻量化,建筑,工程文件,Revit,CAD,SketchUp,Navisworks,3ds Max"/>
+  <meta name="description" content="BIMFACE面向工程建筑领域，提供了Revit模型、CAD图纸等多种工程文件的轻量化浏览及数据服务。 建筑领域的开发者，可以基于BIMFACE的基础服务，根据最终用户的需求，开发出贴合特定场景的应用。"/>
+  <link rel="shortcut icon" href="https://static.bimface.com/favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="https://static.bimface.com/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="css/example-common.css">
+  <style>
+    .container {
+      padding:20px;
+    }
+    #view {
+      width: 100%;;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="logo"></a>
+    <h2>基于BIMFACE快速入门<i>官方示例</i></h2>
+    <div class="btn-box">
+      <a href="#" target="_blank" class="btn btn-sm btn-primary">源代码</a>
+      <a href="#" class="btn btn-sm btn-primary">详情介绍</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="view"></div>
+  </div>
+
+  <footer>
+    <div class="w1200">
+      <div class="copyright">
+        Copyright &copy;2016-2018 <a href="http://bimface.com" target="_blank">BIMFACE</a> 京ICP备10021606号-19 <a href="http://www.glodon.com/" target="_blank">广联达</a>旗下产品
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://static.bimface.com/developer/libs/jquery.js"></script>
+  <script src="https://static.bimface.com/api/BimfaceSDKLoader/BimfaceSDKLoader@latest-release.js" charset="utf-8"></script>
+  <script>
+    $(function(){
+      var _height = window.innerHeight - 105;
+      $('#view').height((_height - 40) + 'px');
+
+      var _fileId = GetQueryString('fileId');
+      var _integrateId = GetQueryString('integrateId');
+      if(_fileId){
+        $.get('file/view_token?fileId='+_fileId,function(res){
+          showView(res);
+        })
+      } else {
+        $.get('integrate/view_token?integrateId='+_integrateId,function(res){
+          showView(res);
+        })
+      }
+    })
+
+    function showView(viewToken){
+      var options = new BimfaceSDKLoaderConfig();
+      options.viewToken = viewToken;
+      BimfaceSDKLoader.load(options, successCallback, failureCallback);
+      function successCallback(viewMetaData) {
+        var dom4Show = document.getElementById('view');
+        new Glodon.Bimface.Application.WebApplicationDemo(viewMetaData, dom4Show);
+      }
+      function failureCallback(error) {
+        console.log(error);
+      };
+    }
+
+    function GetQueryString(name){
+      var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+      var r = window.location.search.substr(1).match(reg);
+      if(r!=null)return  unescape(r[2]); return null;
+    }
+  </script>
+</body>
+</html>
