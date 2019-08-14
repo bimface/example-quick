@@ -1,5 +1,9 @@
 package com.bimface.example.quick.service.impl;
 
+import com.bimface.api.bean.request.integrate.FileIntegrateRequest;
+import com.bimface.api.bean.request.integrate.IntegrateSource;
+import com.bimface.api.bean.response.FileIntegrateBean;
+import com.bimface.api.bean.response.databagDerivative.DatabagDerivativeBean;
 import com.bimface.example.quick.dao.mapper.ExampleQuickIntegrateFileMapper;
 import com.bimface.example.quick.dao.mapper.ExampleQuickIntegrateMapper;
 import com.bimface.example.quick.dao.model.ExampleQuickIntegrate;
@@ -7,14 +11,10 @@ import com.bimface.example.quick.dao.model.ExampleQuickIntegrateFile;
 import com.bimface.example.quick.service.IntegrateService;
 import com.bimface.example.quick.util.DateTimeUtils;
 import com.bimface.example.quick.util.IdGenerator;
+import com.bimface.exception.BimfaceException;
+import com.bimface.file.bean.FileBean;
 import com.bimface.sdk.BimfaceClient;
 import com.bimface.sdk.bean.request.OfflineDatabagRequest;
-import com.bimface.sdk.bean.request.integrate.IntegrateRequest;
-import com.bimface.sdk.bean.request.integrate.IntegrateSource;
-import com.bimface.sdk.bean.response.FileBean;
-import com.bimface.sdk.bean.response.IntegrateBean;
-import com.bimface.sdk.bean.response.OfflineDatabagBean;
-import com.bimface.sdk.exception.BimfaceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,9 +50,8 @@ public class IntegrateServiceImpl implements IntegrateService{
 
     @Override
     @Transactional
-    public ExampleQuickIntegrate integrate(IntegrateRequest integrateRequest) throws BimfaceException, ParseException {
-        IntegrateBean integrateBean = bimfaceClient.integrate(integrateRequest);
-
+    public ExampleQuickIntegrate integrate(FileIntegrateRequest integrateRequest) throws BimfaceException, ParseException {
+        FileIntegrateBean integrateBean = bimfaceClient.integrate(integrateRequest);
         ExampleQuickIntegrate integrate = new ExampleQuickIntegrate();
         integrate.setId(integrateBean.getIntegrateId());
         integrate.setName(integrateBean.getName());
@@ -71,7 +70,7 @@ public class IntegrateServiceImpl implements IntegrateService{
             integrateFile.setFloor(integrateSource.getFloor());
             integrateFile.setFloorSort(integrateSource.getFloorSort());
 
-            FileBean fileBean = bimfaceClient.getFileMetadata(integrateFile.getFileId());
+            FileBean fileBean = bimfaceClient.getFile(integrateFile.getFileId());
             integrateFile.setFileName(fileBean.getName());
             integrateFiles.add(integrateFile);
         }
@@ -81,10 +80,10 @@ public class IntegrateServiceImpl implements IntegrateService{
     }
 
     @Override
-    public OfflineDatabagBean databag(Long integrateId) throws BimfaceException {
+    public DatabagDerivativeBean databag(Long integrateId) throws BimfaceException {
         OfflineDatabagRequest request = new OfflineDatabagRequest();
-        request.setIntegrateId(integrateId.toString());
-        OfflineDatabagBean offlineDatabagBean = bimfaceClient.generateOfflineDatabag(request);
+        request.setIntegrateId(integrateId);
+        DatabagDerivativeBean offlineDatabagBean = bimfaceClient.generateOfflineDatabag(request);
 
         ExampleQuickIntegrate exampleQuickIntegrate = exampleQuickIntegrateMapper.selectByPrimaryKey(integrateId);
         if(!Objects.equals(exampleQuickIntegrate.getDatabagStatus(),offlineDatabagBean.getStatus())){

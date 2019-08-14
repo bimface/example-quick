@@ -1,5 +1,7 @@
 package com.bimface.example.quick.service.impl;
 
+import com.bimface.api.bean.response.FileIntegrateBean;
+import com.bimface.api.bean.response.FileTranslateBean;
 import com.bimface.example.quick.dao.mapper.ExampleQuickFileMapper;
 import com.bimface.example.quick.dao.mapper.ExampleQuickIntegrateFileMapper;
 import com.bimface.example.quick.dao.mapper.ExampleQuickIntegrateMapper;
@@ -9,15 +11,16 @@ import com.bimface.example.quick.dao.model.ExampleQuickIntegrateFile;
 import com.bimface.example.quick.service.ClearDbService;
 import com.bimface.example.quick.util.DateTimeUtils;
 import com.bimface.example.quick.util.IdGenerator;
+import com.bimface.exception.BimfaceException;
+import com.bimface.file.bean.FileBean;
 import com.bimface.sdk.BimfaceClient;
-import com.bimface.sdk.bean.response.FileBean;
-import com.bimface.sdk.bean.response.IntegrateBean;
-import com.bimface.sdk.bean.response.TranslateBean;
-import com.bimface.sdk.exception.BimfaceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.text.ParseException;
@@ -35,13 +38,13 @@ public class ClearDbServiceImpl implements ClearDbService {
     @Autowired
     private ExampleQuickIntegrateFileMapper exampleQuickIntegrateFileMapper;
 
-    @Value("${init.files}")
+    @Value("${init.files:}")
     private long[] initFiles;
-    @Value("${init.integrates}")
+    @Value("${init.integrates:}")
     private long[] initIntegrates;
-    @Value("${init.integrate.files}")
+    @Value("${init.integrate.files:}")
     private String initIntegrateFiles;
-    private HashMap<Long, List<Long>> initIntegrateFileMap;
+    private Map<Long, List<Long>> initIntegrateFileMap;
 
     private List<ExampleQuickFile> exampleQuickFiles;
     private List<ExampleQuickIntegrate> exampleQuickIntegrates;
@@ -49,13 +52,16 @@ public class ClearDbServiceImpl implements ClearDbService {
 
     @PostConstruct
     public void init() throws BimfaceException, ParseException {
-        initIntegrateFileMap = getInitIntegrateFileMap();
         exampleQuickFiles = getInitFiles();
+        initIntegrateFileMap = getInitIntegrateFileMap();
         exampleQuickIntegrates = getIntegrates();
         exampleQuickIntegrateFiles = getIntegrateFiles();
     }
 
-    private HashMap<Long, List<Long>> getInitIntegrateFileMap() {
+    private Map<Long, List<Long>> getInitIntegrateFileMap() {
+        if (StringUtils.isEmpty(initIntegrateFiles)) {
+            return Collections.emptyMap();
+        }
         HashMap<Long, List<Long>> map = new HashMap<>();
         for (String entryString : initIntegrateFiles.split(";")) {
             String[] entryStrings = entryString.split(":");
@@ -67,31 +73,40 @@ public class ClearDbServiceImpl implements ClearDbService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = DataAccessException.class)
     public void clearFile() {
         exampleQuickFileMapper.delete(null);
-        exampleQuickFileMapper.insertFiles(exampleQuickFiles);
+        if (!CollectionUtils.isEmpty(exampleQuickFiles)) {
+            exampleQuickFileMapper.insertFiles(exampleQuickFiles);
+        }
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = DataAccessException.class)
     public void clearIntegrate() {
         exampleQuickIntegrateMapper.delete(null);
-        exampleQuickIntegrateMapper.insertIntegrates(exampleQuickIntegrates);
+        if (!CollectionUtils.isEmpty(exampleQuickIntegrates)) {
+            exampleQuickIntegrateMapper.insertIntegrates(exampleQuickIntegrates);
+        }
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = DataAccessException.class)
     public void clearIntegrateFile() {
         exampleQuickIntegrateFileMapper.delete(null);
-        exampleQuickIntegrateFileMapper.insertIntegrateFiles(exampleQuickIntegrateFiles);
+        if (!CollectionUtils.isEmpty(exampleQuickIntegrateFiles)) {
+            exampleQuickIntegrateFileMapper.insertIntegrateFiles(exampleQuickIntegrateFiles);
+        }
     }
 
-    private List<ExampleQuickFile> getInitFiles() throws BimfaceException, ParseException {
+    private List<ExampleQuickFile> getInitFiles() throws ParseException, BimfaceException {
+        if (initFiles.length == 0) {
+            return Collections.emptyList();
+        }
         List<ExampleQuickFile> exampleQuickFiles = new ArrayList<>(initFiles.length);
         for (long fileId : initFiles) {
-            FileBean fileBean = bimfaceClient.getFileMetadata(fileId);
-            TranslateBean translateBean = bimfaceClient.getTranslate(fileId);
+            FileBean fileBean = bimfaceClient.getFile(fileId);
+            FileTranslateBean translateBean = bimfaceClient.getTranslate(fileId);
             ExampleQuickFile exampleQuickFile = new ExampleQuickFile();
             exampleQuickFile.setId(fileId);
             exampleQuickFile.setName(fileBean.getName());
@@ -104,9 +119,12 @@ public class ClearDbServiceImpl implements ClearDbService {
     }
 
     private List<ExampleQuickIntegrate> getIntegrates() throws BimfaceException, ParseException {
+        if (initIntegrates.length == 0) {
+            return Collections.emptyList();
+        }
         List<ExampleQuickIntegrate> exampleQuickIntegrates = new ArrayList<>(initIntegrates.length);
         for (long integrateId : initIntegrates) {
-            IntegrateBean integrateBean = bimfaceClient.getIntegrate(integrateId);
+            FileIntegrateBean integrateBean = bimfaceClient.getIntegrate(integrateId);
             ExampleQuickIntegrate integrate = new ExampleQuickIntegrate();
             integrate.setId(integrateBean.getIntegrateId());
             integrate.setName(integrateBean.getName());
@@ -119,11 +137,14 @@ public class ClearDbServiceImpl implements ClearDbService {
     }
 
     private List<ExampleQuickIntegrateFile> getIntegrateFiles() throws BimfaceException {
+        if (CollectionUtils.isEmpty(initIntegrateFileMap)) {
+            return Collections.emptyList();
+        }
         List<ExampleQuickIntegrateFile> integrateFiles = new ArrayList<>();
         for (Map.Entry<Long, List<Long>> entry : initIntegrateFileMap.entrySet()) {
             long integrateId = entry.getKey();
             for (long fileId : entry.getValue()) {
-                FileBean fileBean = bimfaceClient.getFileMetadata(fileId);
+                FileBean fileBean = bimfaceClient.getFile(fileId);
                 ExampleQuickIntegrateFile integrateFile = new ExampleQuickIntegrateFile();
                 integrateFile.setId(IdGenerator.nextId());
                 integrateFile.setIntegrateId(integrateId);
