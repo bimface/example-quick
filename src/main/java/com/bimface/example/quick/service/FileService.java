@@ -1,10 +1,10 @@
 package com.bimface.example.quick.service;
 
+import com.bimface.api.bean.response.FileTranslateBean;
+import com.bimface.api.bean.response.databagDerivative.DatabagDerivativeBean;
 import com.bimface.example.quick.dao.model.ExampleQuickFile;
-import com.bimface.sdk.bean.response.FileBean;
-import com.bimface.sdk.bean.response.OfflineDatabagBean;
-import com.bimface.sdk.bean.response.TranslateBean;
-import com.bimface.sdk.exception.BimfaceException;
+import com.bimface.exception.BimfaceException;
+import com.bimface.file.bean.FileBean;
 
 import java.text.ParseException;
 import java.util.List;
@@ -35,7 +35,7 @@ public interface FileService {
      * @return
      * @throws BimfaceException
      */
-    TranslateBean translate(Long fileId) throws BimfaceException;
+    FileTranslateBean translate(Long fileId) throws BimfaceException;
 
     /**
      * 生成离线数据包
@@ -44,7 +44,7 @@ public interface FileService {
      * @return
      * @throws BimfaceException
      */
-    OfflineDatabagBean databag(Long fileId) throws BimfaceException;
+    DatabagDerivativeBean databag(Long fileId) throws BimfaceException;
 
     /**
      * delete

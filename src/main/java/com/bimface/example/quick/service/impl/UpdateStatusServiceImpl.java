@@ -1,5 +1,8 @@
 package com.bimface.example.quick.service.impl;
 
+import com.bimface.api.bean.response.FileIntegrateBean;
+import com.bimface.api.bean.response.FileTranslateBean;
+import com.bimface.api.bean.response.databagDerivative.DatabagDerivativeBean;
 import com.bimface.example.quick.dao.mapper.ExampleQuickFileMapper;
 import com.bimface.example.quick.dao.mapper.ExampleQuickIntegrateMapper;
 import com.bimface.example.quick.dao.model.ExampleQuickFile;
@@ -8,12 +11,9 @@ import com.bimface.example.quick.enums.DatabagStatus;
 import com.bimface.example.quick.enums.IntegrateStatus;
 import com.bimface.example.quick.enums.TranslateStatus;
 import com.bimface.example.quick.service.UpdateStatusService;
+import com.bimface.exception.BimfaceException;
 import com.bimface.sdk.BimfaceClient;
 import com.bimface.sdk.bean.request.OfflineDatabagRequest;
-import com.bimface.sdk.bean.response.IntegrateBean;
-import com.bimface.sdk.bean.response.OfflineDatabagBean;
-import com.bimface.sdk.bean.response.TranslateBean;
-import com.bimface.sdk.exception.BimfaceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
@@ -35,7 +35,7 @@ public class UpdateStatusServiceImpl implements UpdateStatusService {
         List<ExampleQuickFile> files = exampleQuickFileMapper.selectByExample(getToUploadTranslateExample());
         for (ExampleQuickFile exampleQuickFile : files) {
             try {
-                TranslateBean translateBean = bimfaceClient.getTranslate(exampleQuickFile.getId());
+                FileTranslateBean translateBean = bimfaceClient.getTranslate(exampleQuickFile.getId());
                 if(!Objects.equals(exampleQuickFile.getTranslateStatus(),translateBean.getStatus())){
                     exampleQuickFile.setTranslateStatus(translateBean.getStatus());
                     exampleQuickFileMapper.updateByPrimaryKey(exampleQuickFile);
@@ -51,7 +51,7 @@ public class UpdateStatusServiceImpl implements UpdateStatusService {
         List<ExampleQuickIntegrate> integrates = exampleQuickIntegrateMapper.selectByExample(getToUploadIntegrateExample());
         for (ExampleQuickIntegrate exampleQuickIntegrate : integrates) {
             try {
-                IntegrateBean integrateBean = bimfaceClient.getIntegrate(exampleQuickIntegrate.getId());
+                FileIntegrateBean integrateBean = bimfaceClient.getIntegrate(exampleQuickIntegrate.getId());
                 if(!Objects.equals(exampleQuickIntegrate.getIntegrateStatus(),integrateBean.getStatus())){
                     exampleQuickIntegrate.setIntegrateStatus(integrateBean.getStatus());
                     exampleQuickIntegrateMapper.updateByPrimaryKey(exampleQuickIntegrate);
@@ -68,11 +68,11 @@ public class UpdateStatusServiceImpl implements UpdateStatusService {
         for (ExampleQuickFile exampleQuickFile : files) {
             try {
                 OfflineDatabagRequest request = new OfflineDatabagRequest();
-                request.setFileId(exampleQuickFile.getId().toString());
-                List<OfflineDatabagBean> offlineDatabagBeans = bimfaceClient.queryOfflineDatabag(request);
-                OfflineDatabagBean offlineDatabagBean = offlineDatabagBeans.get(offlineDatabagBeans.size() - 1);
-                if(!Objects.equals(exampleQuickFile.getDatabagStatus(),offlineDatabagBean.getStatus())){
-                    exampleQuickFile.setDatabagStatus(offlineDatabagBean.getStatus());
+                request.setFileId(exampleQuickFile.getId());
+                List<? extends DatabagDerivativeBean> offlineDatabagBeans = bimfaceClient.queryOfflineDatabag(request);
+                DatabagDerivativeBean databagDerivativeBean = offlineDatabagBeans.get(offlineDatabagBeans.size() - 1);
+                if(!Objects.equals(exampleQuickFile.getDatabagStatus(),databagDerivativeBean.getStatus())){
+                    exampleQuickFile.setDatabagStatus(databagDerivativeBean.getStatus());
                     exampleQuickFileMapper.updateByPrimaryKey(exampleQuickFile);
                 }
             } catch (BimfaceException e) {
@@ -87,11 +87,11 @@ public class UpdateStatusServiceImpl implements UpdateStatusService {
         for (ExampleQuickIntegrate exampleQuickIntegrate : integrates) {
             try {
                 OfflineDatabagRequest request = new OfflineDatabagRequest();
-                request.setIntegrateId(exampleQuickIntegrate.getId().toString());
-                List<OfflineDatabagBean> offlineDatabagBeans = bimfaceClient.queryOfflineDatabag(request);
-                OfflineDatabagBean offlineDatabagBean = offlineDatabagBeans.get(offlineDatabagBeans.size() - 1);
-                if(!Objects.equals(exampleQuickIntegrate.getDatabagStatus(),offlineDatabagBean.getStatus())){
-                    exampleQuickIntegrate.setDatabagStatus(offlineDatabagBean.getStatus());
+                request.setIntegrateId(exampleQuickIntegrate.getId());
+                List<? extends DatabagDerivativeBean> offlineDatabagBeans = bimfaceClient.queryOfflineDatabag(request);
+                DatabagDerivativeBean databagDerivativeBean = offlineDatabagBeans.get(offlineDatabagBeans.size() - 1);
+                if(!Objects.equals(exampleQuickIntegrate.getDatabagStatus(),databagDerivativeBean.getStatus())){
+                    exampleQuickIntegrate.setDatabagStatus(databagDerivativeBean.getStatus());
                     exampleQuickIntegrateMapper.updateByPrimaryKey(exampleQuickIntegrate);
                 }
             } catch (BimfaceException e) {

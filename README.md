@@ -28,6 +28,17 @@ spring.datasource.username={数据库用户名}
 spring.datasource.password={数据库连接密码}
 ```
 
+
+
+## 如果需要显示默认的文件、转换和集成列表，可以按如下格式修改application-test.properties（若不需要，可以忽略此步）
+```
+init.files=fileId,[fileId]...
+init.integrates=integrateId,[integrateId]...
+init.integrate.files=integrateId:fileId,[fileId];[integrateId:fileId,[fileId]]...
+```
+
+
+
 ## 使用Maven编译JAVA程序
 
 进入根目录

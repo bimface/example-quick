@@ -1,10 +1,10 @@
 package com.bimface.example.quick.service;
 
+import com.bimface.api.bean.request.integrate.FileIntegrateRequest;
+import com.bimface.api.bean.response.databagDerivative.DatabagDerivativeBean;
 import com.bimface.example.quick.dao.model.ExampleQuickIntegrate;
 import com.bimface.example.quick.dao.model.ExampleQuickIntegrateFile;
-import com.bimface.sdk.bean.request.integrate.IntegrateRequest;
-import com.bimface.sdk.bean.response.OfflineDatabagBean;
-import com.bimface.sdk.exception.BimfaceException;
+import com.bimface.exception.BimfaceException;
 
 import java.text.ParseException;
 import java.util.List;
@@ -33,7 +33,7 @@ public interface IntegrateService {
      * @throws BimfaceException
      * @throws ParseException
      */
-    ExampleQuickIntegrate integrate(IntegrateRequest integrateRequest) throws BimfaceException, ParseException;
+    ExampleQuickIntegrate integrate(FileIntegrateRequest integrateRequest) throws BimfaceException, ParseException;
 
     /**
      * 生成离线包
@@ -41,7 +41,7 @@ public interface IntegrateService {
      * @param integrateId
      * @return
      */
-    OfflineDatabagBean databag(Long integrateId) throws BimfaceException;
+    DatabagDerivativeBean databag(Long integrateId) throws BimfaceException;
 
     /**
      * 删除模型

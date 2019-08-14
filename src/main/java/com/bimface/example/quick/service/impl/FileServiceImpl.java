@@ -1,16 +1,16 @@
 package com.bimface.example.quick.service.impl;
 
 
+import com.bimface.api.bean.response.FileTranslateBean;
+import com.bimface.api.bean.response.databagDerivative.DatabagDerivativeBean;
 import com.bimface.example.quick.dao.mapper.ExampleQuickFileMapper;
 import com.bimface.example.quick.dao.model.ExampleQuickFile;
 import com.bimface.example.quick.service.FileService;
 import com.bimface.example.quick.util.DateTimeUtils;
+import com.bimface.exception.BimfaceException;
+import com.bimface.file.bean.FileBean;
 import com.bimface.sdk.BimfaceClient;
 import com.bimface.sdk.bean.request.OfflineDatabagRequest;
-import com.bimface.sdk.bean.response.FileBean;
-import com.bimface.sdk.bean.response.OfflineDatabagBean;
-import com.bimface.sdk.bean.response.TranslateBean;
-import com.bimface.sdk.exception.BimfaceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -57,8 +57,8 @@ public class FileServiceImpl implements FileService{
     }
 
     @Override
-    public TranslateBean translate(Long fileId) throws BimfaceException {
-        TranslateBean translateBean = bimfaceClient.translate(fileId);
+    public FileTranslateBean translate(Long fileId) throws BimfaceException {
+        FileTranslateBean translateBean = bimfaceClient.translate(fileId);
 
         ExampleQuickFile exampleQuickFile = exampleQuickFileMapper.selectByPrimaryKey(fileId);
         if(!Objects.equals(exampleQuickFile.getTranslateStatus(),translateBean.getStatus())){
@@ -69,17 +69,15 @@ public class FileServiceImpl implements FileService{
     }
 
     @Override
-    public OfflineDatabagBean databag(Long fileId) throws BimfaceException {
+    public DatabagDerivativeBean databag(Long fileId) throws BimfaceException {
         OfflineDatabagRequest request = new OfflineDatabagRequest();
-        request.setFileId(fileId.toString());
-        OfflineDatabagBean offlineDatabagBean = bimfaceClient.generateOfflineDatabag(request);
-
+        request.setFileId(fileId);
+        DatabagDerivativeBean offlineDatabagBean = bimfaceClient.generateOfflineDatabag(request);
         ExampleQuickFile exampleQuickFile = exampleQuickFileMapper.selectByPrimaryKey(fileId);
         if(!Objects.equals(exampleQuickFile.getDatabagStatus(),offlineDatabagBean.getStatus())){
             exampleQuickFile.setDatabagStatus(offlineDatabagBean.getStatus());
             exampleQuickFileMapper.updateByPrimaryKey(exampleQuickFile);
         }
-
         return offlineDatabagBean;
     }
 
